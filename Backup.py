@@ -2,9 +2,18 @@ import optparse
 import requests
 import json
 import os
+import urllib
 from pathlib import Path
 from urllib.parse import urljoin
 from datetime import date
+from ftplib import FTP, error_perm
+import io
+
+
+def uploadFile( ftpServer: FTP, fileName, content):
+    bio = io.BytesIO(content)
+    print("Tranfering file to ftp: {}".format(os.path.basename(fileName)))
+    ftpServer.storbinary("STOR {}".format(os.path.basename(fileName)), bio)
 
 if __name__ == '__main__':
 
@@ -34,6 +43,24 @@ if __name__ == '__main__':
                       dest="output",
                       help="Output directory")
 
+    parser.add_option("-f", "--ftp",
+                      action="store",
+                      type="string",
+                      dest="ftpUrl",
+                      help="Ftp server address")
+
+    parser.add_option("-q", "--fuser",
+                      action="store",
+                      type="string",
+                      dest="ftpUser",
+                      help="Ftp server username")
+
+    parser.add_option("-w", "--fpassword",
+                      action="store",
+                      type="string",
+                      dest="ftpPassword",
+                      help="Ftp server password")
+
     (options, args) = parser.parse_args()
 
     urlLogin = urljoin(options.server, "api/login")
@@ -60,7 +87,8 @@ if __name__ == '__main__':
     name = statusJson["data"][0]["name"]
 
     backupCommand = {
-        "cmd":"backup" 
+        "cmd":"backup",
+        "days":"0"
     }
     
     url = urljoin(options.server, "api/s/default/cmd/backup")
@@ -82,6 +110,14 @@ if __name__ == '__main__':
     today = date.today()
     currentData = today.strftime("%Y.%m.%d")
 
-    fileName =  Path( "Backup-" + name + "-" + currentData +  "-" + os.path.basename(relativeFileName) )
-    fileNamePath = Path.joinpath(Path(options.output),fileName)
-    open(fileName, 'wb').write(r.content)
+    fileName =  Path("Backup-" + name + "-" + currentData +  "-" + os.path.basename(relativeFileName) )
+    #open(Path.joinpath(Path("./"), fileName), 'wb').write(r.content)
+
+    if options.ftpUrl:
+        ftpData = urllib.parse.urlsplit(options.ftpUrl)
+        ftpObject = FTP()
+        ftpObject.connect(host=options.ftpUrl)
+        ftpObject.login(options.ftpUser, options.ftpPassword)
+        uploadFile(ftpObject, fileName, r.content )
+        ftpObject.close()
+        
