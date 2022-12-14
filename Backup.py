@@ -60,6 +60,12 @@ if __name__ == '__main__':
                       type="string",
                       dest="ftpPassword",
                       help="Ftp server password")
+    
+    parser.add_option("-c", "--cacert",
+                      action="store",
+                      type="string",
+                      dest="cacert",
+                      help="Verify certificate")
 
     (options, args) = parser.parse_args()
 
@@ -69,8 +75,10 @@ if __name__ == '__main__':
         'password':options.password
     }
     s = requests.session()
-
-    x = s.post(urlLogin,json=authCommand, verify=False)
+    certificate=False
+    if options.cacert:
+        certificate = options.cacert
+    x = s.post(urlLogin,json=authCommand, verify=certificate)
     if not x.ok:
         print("Login failed: \n")
         print(x.text)
@@ -111,7 +119,8 @@ if __name__ == '__main__':
     currentData = today.strftime("%Y.%m.%d")
 
     fileName =  Path("Backup-" + name + "-" + currentData +  "-" + os.path.basename(relativeFileName) )
-    #open(Path.joinpath(Path("./"), fileName), 'wb').write(r.content)
+    if options.output:
+        open(Path.joinpath(Path(options.output), fileName), 'wb').write(r.content)
 
     if options.ftpUrl:
         ftpData = urllib.parse.urlsplit(options.ftpUrl)
