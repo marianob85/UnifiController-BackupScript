@@ -85,7 +85,7 @@ if __name__ == '__main__':
         exit(1)
 
     statusLogin = urljoin(options.server, "api/s/default/rest/setting")
-    x = s.get(statusLogin, verify=False)
+    x = s.get(statusLogin, verify=certificate)
     if not x.ok:
         print("Faild to get status: \n")
         print(x.text)
@@ -100,7 +100,7 @@ if __name__ == '__main__':
     }
     
     url = urljoin(options.server, "api/s/default/cmd/backup")
-    x = s.post(url,json=backupCommand, verify=False)
+    x = s.post(url,json=backupCommand, verify=certificate)
     if not x.ok:
         print("Faild to perform backup: \n")
         print(x.text)
@@ -109,7 +109,7 @@ if __name__ == '__main__':
     data = json.loads(x.text)
     relativeFileName = data["data"][0]["url"]
     url = urljoin(options.server, relativeFileName)
-    r = s.get(url, allow_redirects=True)
+    r = s.get(url, allow_redirects=True, verify=certificate)
     if not r.ok:
         print("Faild to download backup: \n")
         print(r.text)
